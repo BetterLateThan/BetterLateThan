@@ -11,6 +11,8 @@ private:
   bool debug_; /* Enables debugging output */
 
   /* Add member variables here */
+  unsigned int cwnd;
+  int toggle;
 
 public:
   /* Public interface for the congestion controller */
@@ -36,6 +38,7 @@ public:
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
   unsigned int timeout_ms( void );
+
 };
 
 #endif
