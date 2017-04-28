@@ -12,7 +12,9 @@ private:
 
   /* Add member variables here */
   unsigned int cwnd;
-  int toggle;
+  unsigned int sthresh;
+
+  
 
 public:
   /* Public interface for the congestion controller */

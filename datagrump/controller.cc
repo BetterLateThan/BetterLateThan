@@ -7,17 +7,14 @@ using namespace std;
 
 
 #define CWND_INIT 50
-#define CWND_RSET 1
-#define T_TIMEOUT 500
-// #define THRESH 100
-// #define INCR 2
-// #define DECR 12
-
-
+#define W_MAX 100
+#define SLOW_GROWTH 1 
+#define CGROWTH_RATE 1
+#define T_TIMEOUT 1000
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), cwnd( CWND_INIT ), toggle(0)
+  : debug_( debug ), cwnd( CWND_INIT ), sthresh( W_MAX / 2)
 {}
 
 /* Get current window size, in datagrams */
@@ -65,72 +62,22 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 			       const uint64_t timestamp_ack_received )
                                /* when the ack was received (by sender) */
 {
-  /* Default: take no action */
-  // bool timed_out = (timestamp_ack_received - send_timestamp_acked) > timeout_ms(); 
-
-  // if (timed_out)
-  // {
-  //   // cerr << "DROPPED PACKET" << endl;
-  //   cwnd = CWND_RSET;
-  // }
-  // else
-  //   cwnd = cwnd + 1/cwnd;
-
-  // bool over_threshold = (timestamp_ack_received - send_timestamp_acked) > THRESH;
-  // if (over_threshold)
-  // {
-  //   cwnd -= DECR;
-  //   if (cwnd < 1 || cwnd > 4200000000)
-  //     cwnd = 1;
-  // }
-  // else
-  //   cwnd += INCR;
-  #define INCR_N1 6
-  #define THSH_N1 20
-
-  #define INCR_0 2
-  #define THSH_0 50
-  
-  #define INCR_1 1
-  #define THSH_1 100
-  
-  #define INCR_2 (-1)
-  #define THSH_2 125
-  
-  #define INCR_3 (-2)
-  #define THSH_3 150
-  
-  #define INCR_4 (-10)
-  #define THSH_4 300
-
-  #define INCR_5 (-20)
-
-  unsigned int RTT = timestamp_ack_received - send_timestamp_acked;
-
-  // Only increment if there's low queue delay
-
-  if (RTT <= THSH_N1)
-    cwnd += INCR_N1;
-
-  else if (RTT <= THSH_0)
-    cwnd += INCR_0;
-
-  else if (RTT <= THSH_1)
-    cwnd += INCR_1;
-
-  else if (RTT <= THSH_2)
-    cwnd += INCR_2;
-
-  else if (RTT <= THSH_3)
-    cwnd += INCR_3;
-
-  else if (RTT <= THSH_4)
-    cwnd /= 2;
-
-  else
-    cwnd /= 3;
-    // cwnd = CWND_RSET;
-
+  if (cwnd < sthresh)
+  {
+    /* Slow Start...*/
+    if (timestamp_ack_received - send_timestamp_acked > T_TIMEOUT)
+    {
+      sthresh = sthresh / 2;
+      cwnd = cwnd / 2;
+    }
+    else
+        cwnd += SLOW_GROWTH;   
+  }
+  else 
+  {
+    /* Congestion Avoidance... */
+    cwnd += (CGROWTH_RATE)* 1/cwnd;
+  }
 
   // Catch all, prevents empty/negative cwnds
   if (cwnd < 1 || cwnd > 4200000000)
